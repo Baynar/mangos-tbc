@@ -48,6 +48,8 @@
 #include "Loot/LootMgr.h"
 #include "AI/ScriptDevAI/include/sc_grid_searchers.h"
 
+#include "Entities/CPlayer.h"
+
 #define NULL_AURA_SLOT 0xFF
 
 /**
@@ -4206,6 +4208,23 @@ void Aura::HandleAuraModIncreaseFlightSpeed(bool apply, bool Real)
         // Dragonmaw Illusion (overwrite mount model, mounted aura already applied)
         if (apply && target->HasAura(42016, EFFECT_INDEX_0) && target->GetMountID())
             target->SetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID, 16314);
+
+        // Emulate player getting knocked back when dismounting from flight, they move with extended speed after dismounting
+        if (!apply && target->GetTypeId() == TYPEID_PLAYER)
+        {
+            switch (m_modifier.m_amount)
+            {
+            case 280:
+                target->ToPlayer()->ToCPlayer()->HandleKnockBack(0.f, 26.6f, 0.f);
+                break;
+            case 60:
+                target->ToPlayer()->ToCPlayer()->HandleKnockBack(0.f, 11.2f, 0.f);
+                break;
+            default:
+                break;
+            }
+            
+        }
     }
 
     target->UpdateSpeed(MOVE_FLIGHT, true);

@@ -246,7 +246,7 @@ GroupQueueInfo* BattleGroundQueue::AddGroup(Player* leader, Group* grp, BattleGr
 void BattleGroundQueue::PlayerInvitedToBGUpdateAverageWaitTime(GroupQueueInfo* ginfo, BattleGroundBracketId bracket_id)
 {
     uint32 timeInQueue = WorldTimer::getMSTimeDiff(ginfo->JoinTime, WorldTimer::getMSTime());
-    uint8 team_index = TEAM_INDEX_ALLIANCE;                    // default set to BG_TEAM_ALLIANCE - or non rated arenas!
+    uint8 team_index = TEAM_INDEX_ALLIANCE;                    // default set to TEAM_INDEX_ALLIANCE - or non rated arenas!
     if (ginfo->arenaType == ARENA_TYPE_NONE)
     {
         if (ginfo->GroupTeam == HORDE)
@@ -255,7 +255,7 @@ void BattleGroundQueue::PlayerInvitedToBGUpdateAverageWaitTime(GroupQueueInfo* g
     else
     {
         if (ginfo->IsRated)
-            team_index = TEAM_INDEX_HORDE;                     // for rated arenas use BG_TEAM_HORDE
+            team_index = TEAM_INDEX_HORDE;                     // for rated arenas use TEAM_INDEX_HORDE
     }
 
     // store pointer to arrayindex of player that was added first
@@ -273,7 +273,7 @@ void BattleGroundQueue::PlayerInvitedToBGUpdateAverageWaitTime(GroupQueueInfo* g
 
 uint32 BattleGroundQueue::GetAverageQueueWaitTime(GroupQueueInfo* ginfo, BattleGroundBracketId bracket_id)
 {
-    uint8 team_index = TEAM_INDEX_ALLIANCE;                    // default set to BG_TEAM_ALLIANCE - or non rated arenas!
+    uint8 team_index = TEAM_INDEX_ALLIANCE;                    // default set to TEAM_INDEX_ALLIANCE - or non rated arenas!
     if (ginfo->arenaType == ARENA_TYPE_NONE)
     {
         if (ginfo->GroupTeam == HORDE)
@@ -282,7 +282,7 @@ uint32 BattleGroundQueue::GetAverageQueueWaitTime(GroupQueueInfo* ginfo, BattleG
     else
     {
         if (ginfo->IsRated)
-            team_index = TEAM_INDEX_HORDE;                     // for rated arenas use BG_TEAM_HORDE
+            team_index = TEAM_INDEX_HORDE;                     // for rated arenas use TEAM_INDEX_HORDE
     }
     // check if there is enought values(we always add values > 0)
     if (m_WaitTimes[team_index][bracket_id][COUNT_OF_PLAYERS_TO_AVERAGE_WAIT_TIME - 1])
@@ -503,6 +503,9 @@ large groups are disadvantageous, because they will be kicked first if invitatio
 */
 void BattleGroundQueue::FillPlayersToBG(BattleGround* bg, BattleGroundBracketId bracket_id)
 {
+    if (MixPlayersToBG(bg, bracket_id))
+        return;
+
     int32 hordeFree = bg->GetFreeSlotsForTeam(HORDE);
     int32 aliFree   = bg->GetFreeSlotsForTeam(ALLIANCE);
 
@@ -863,8 +866,9 @@ void BattleGroundQueue::Update(BattleGroundTypeId bgTypeId, BattleGroundBracketI
     if (!isRated)
     {
         // if there are enough players in pools, start new battleground or non rated arena
-        if (CheckNormalMatch(bg_template, bracket_id, MinPlayersPerTeam, MaxPlayersPerTeam)
-                || (bg_template->isArena() && CheckSkirmishForSameFaction(bracket_id, MinPlayersPerTeam)))
+        if (CheckMixedMatch(bg_template, bracket_id, MinPlayersPerTeam, MaxPlayersPerTeam) ||
+            CheckNormalMatch(bg_template, bracket_id, MinPlayersPerTeam, MaxPlayersPerTeam)
+            || (bg_template->isArena() && CheckSkirmishForSameFaction(bracket_id, MinPlayersPerTeam)))
         {
             // we successfully created a pool
             BattleGround* bg2 = sBattleGroundMgr.CreateNewBattleGround(bgTypeId, bracket_id, arenaType, false);
@@ -1191,7 +1195,7 @@ void BattleGroundMgr::Update(uint32 diff)
                 m_NextAutoDistributionTime = time_t(m_NextAutoDistributionTime + BATTLEGROUND_ARENA_POINT_DISTRIBUTION_DAY * sWorld.getConfig(CONFIG_UINT32_ARENA_AUTO_DISTRIBUTE_INTERVAL_DAYS));
                 CharacterDatabase.PExecute("UPDATE saved_variables SET NextArenaPointDistributionTime = '" UI64FMTD "'", uint64(m_NextAutoDistributionTime));
             }
-            m_AutoDistributionTimeChecker = 60000; // check 10 minutes
+            m_AutoDistributionTimeChecker = 600000; // check 10 minutes
         }
         else
             m_AutoDistributionTimeChecker -= diff;
@@ -1676,7 +1680,7 @@ void BattleGroundMgr::InitAutomaticArenaPointDistribution()
 {
     if (sWorld.getConfig(CONFIG_BOOL_ARENA_AUTO_DISTRIBUTE_POINTS))
     {
-        QueryResult* result = CharacterDatabase.PQuery("SELECT NextArenaPointDistributionTime FROM saved_variables");
+        QueryResult* result = CharacterDatabase.Query("SELECT NextArenaPointDistributionTime FROM saved_variables");
         if (!result) // if not set generate time for next wednesday
         {
             // generate time by config on first server launch
@@ -2124,4 +2128,70 @@ void BattleGroundMgr::LoadBattleEventIndexes()
     sLog.outString(">> Loaded %u battleground eventindexes", count);
     sLog.outString();
     delete result;
+}
+
+bool BattleGroundQueue::CheckMixedMatch(BattleGround* bg_template, BattleGroundBracketId bracket_id, uint32 minPlayers, uint32 maxPlayers)
+{
+    return CFBGGroupInserter(bg_template, bracket_id, maxPlayers, maxPlayers, minPlayers);
+}
+
+bool BattleGroundQueue::MixPlayersToBG(BattleGround* bg, BattleGroundBracketId bracket_id)
+{
+    return CFBGGroupInserter(bg, bracket_id, bg->GetFreeSlotsForTeam(ALLIANCE), bg->GetFreeSlotsForTeam(HORDE), 0);
+}
+
+bool BattleGroundQueue::CFBGGroupInserter(BattleGround* bg, BattleGroundBracketId bracket_id, uint32 AllyFree, uint32 HordeFree, uint32 MinPlayers)
+{
+    if (!sWorld.getConfig(CONFIG_BOOL_CFBG_ENABLED) || !bg->isBattleGround())
+        return false;
+
+    if (MinPlayers)
+    {
+        m_SelectionPools[TEAM_INDEX_ALLIANCE].Init();
+        m_SelectionPools[TEAM_INDEX_HORDE].Init();
+    }
+
+    uint32 AddedAlly = bg->GetMaxPlayersPerTeam() - AllyFree;
+    uint32 AddedHorde = bg->GetMaxPlayersPerTeam() - HordeFree;
+
+    // If players on different factions queue at the same second it'll be random who gets added first
+    bool AllyFirst = urand(0, 1);
+    auto Groups = std::list<GroupQueueInfo*>();
+
+    for (auto& ginfo : m_QueuedGroups[bracket_id][AllyFirst ? BG_QUEUE_NORMAL_ALLIANCE : BG_QUEUE_NORMAL_HORDE])
+        Groups.push_back(ginfo);
+    for (auto& ginfo : m_QueuedGroups[bracket_id][AllyFirst ? BG_QUEUE_NORMAL_HORDE : BG_QUEUE_NORMAL_ALLIANCE])
+        Groups.push_back(ginfo);
+
+    Groups.sort(GroupQueueInfoComparator());
+
+    for (auto& ginfo : Groups)
+    {
+        if (!ginfo->IsInvitedToBGInstanceGUID)
+        {
+            bool AddAsAlly = AddedAlly == AddedHorde ? ginfo->GroupTeam == ALLIANCE : AddedAlly < AddedHorde; // Prefer native team
+
+            ginfo->GroupTeam = AddAsAlly ? ALLIANCE : HORDE;
+
+            if (m_SelectionPools[AddAsAlly ? TEAM_INDEX_ALLIANCE : TEAM_INDEX_HORDE].AddGroup(ginfo, AddAsAlly ? AllyFree : HordeFree))
+                AddAsAlly ? AddedAlly += ginfo->Players.size() : AddedHorde += ginfo->Players.size();
+            else
+                break;
+
+            // Return when we're ready to start a BG, if we're in startup process
+            if (m_SelectionPools[TEAM_INDEX_ALLIANCE].GetPlayerCount() >= MinPlayers &&
+                m_SelectionPools[TEAM_INDEX_HORDE].GetPlayerCount() >= MinPlayers)
+                return true;
+        }
+    }
+
+    // If we're in BG testing one player is enough
+    if (sBattleGroundMgr.isTesting() && m_SelectionPools[TEAM_INDEX_ALLIANCE].GetPlayerCount() + m_SelectionPools[TEAM_INDEX_HORDE].GetPlayerCount() > 0)
+        return true;
+
+    // MinPlayers is 0 when filling existing BG
+    if (!MinPlayers)
+        return true;
+
+    return false;
 }

@@ -7,6 +7,7 @@
 
 #include "AI/ScriptDevAI/ScriptDevAIMgr.h"
 #include "Entities/Object.h"
+#include "Entities/Unit.h"
 #include "Entities/Creature.h"
 #include "AI/BaseAI/CreatureAI.h"
 #include "Entities/GameObject.h"
