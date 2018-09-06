@@ -15,8 +15,8 @@ bool AntiCheat_nofall::HandleMovement(const MovementInfoPtr& moveInfo, Opcodes o
 
     if (newmoveInfo->HasMovementFlag(MOVEFLAG_LEVITATING) && !CanFly())
     {
-        if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
-            m_Player->BoxChat << "NOFALL CHEAT" << "\n";
+        //if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
+            //m_Player->BoxChat << "NOFALL CHEAT" << "\n";
 
 		m_Player->TeleportToPos(oldMapID, oldmoveInfo->GetPos(), TELE_TO_NOT_LEAVE_COMBAT);
 

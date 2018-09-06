@@ -16,8 +16,8 @@ bool AntiCheat_jump::HandleMovement(const MovementInfoPtr& MoveInfo, Opcodes opc
     {
 		m_Player->TeleportToPos(storedMapID, storedmoveInfo->GetPos(), TELE_TO_NOT_LEAVE_COMBAT);
 
-        if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
-            m_Player->BoxChat << "Jump hack" << "\n";
+        //if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
+            //m_Player->BoxChat << "Jump hack" << "\n";
 
         return SetOldMoveInfo(true);
     }

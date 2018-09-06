@@ -39,8 +39,8 @@ bool AntiCheat_wallclimb::HandleMovement(const MovementInfoPtr& MoveInfo, Opcode
     {
 		m_Player->TeleportToPos(storedMapID, storedmoveInfo->GetPos(), TELE_TO_NOT_LEAVE_COMBAT);
 
-        if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
-            m_Player->BoxChat << "Wallclimbing angle: " << angle << "\n";
+        //if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
+            //m_Player->BoxChat << "Wallclimbing angle: " << angle << "\n";
 
         return SetOldMoveInfo(true);
     }

@@ -1,8 +1,10 @@
 #include "AntiCheat_waterwalking.h"
 #include "Entities/CPlayer.h"
+#include "Entities/Player.h"
 #include "Spells/Spell.h"
 #include "Spells/SpellAuras.h"
 #include "Spells/SpellMgr.h"
+#include "World/World.h"
 
 AntiCheat_waterwalking::AntiCheat_waterwalking(CPlayer* player) : AntiCheat(player)
 {
@@ -19,8 +21,10 @@ bool AntiCheat_waterwalking::HandleMovement(const MovementInfoPtr& MoveInfo, Opc
     {
         m_Player->SetWaterWalk(false);
 
-        if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
-            m_Player->BoxChat << "WATERWALK CHEAT" << "\n";
+
+        //if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
+			//sWorld.SendWorldTextToAboveSecurity(SEC_MODERATOR);
+            //m_Player->BoxChat << "WATERWALK CHEAT" << "\n";
 
         return SetOldMoveInfo(true);
     }

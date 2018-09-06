@@ -54,7 +54,7 @@ bool AntiCheat_speed::HandleMovement(const MovementInfoPtr& MoveInfo, Opcodes op
 
     if (!cheat && cheating)
     {
-        if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
+        /*if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
         {
             m_Player->BoxChat << "----------------------------" << "\n";
             m_Player->BoxChat << "xyspeed: " << newmoveInfo->GetJumpInfo().xyspeed << "\n";
@@ -63,7 +63,7 @@ bool AntiCheat_speed::HandleMovement(const MovementInfoPtr& MoveInfo, Opcodes op
             m_Player->BoxChat << std::setprecision(10) << "travelspeed: " << travelspeed << "\n";
             m_Player->BoxChat << std::setprecision(10) << "diff: " << travelspeed - allowedspeed << "\n";
             m_Player->BoxChat << "SPEEDCHEAT" << "\n";
-        }
+        }*/
 
 		m_Player->TeleportToPos(storedMapID, storedmoveInfo->GetPos(), TELE_TO_NOT_LEAVE_COMBAT);
 

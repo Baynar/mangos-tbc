@@ -16,14 +16,14 @@ bool AntiCheat_gravity::HandleMovement(const MovementInfoPtr& MoveInfo, Opcodes 
 
     if (!cheat && isFalling() && falldiff > 0.1f && !CanFly()) // Make acceptable diff configureable
     {
-        if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
+        /*if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
         {
             m_Player->BoxChat << "currentz: " << newmoveInfo->GetPos()->z << std::endl;
             m_Player->BoxChat << "expectedz: " << GetExpectedZ() << std::endl;
             m_Player->BoxChat << "velocityZ: " << GetDistanceZ() / GetDiffInSec() << std::endl;
             m_Player->BoxChat << "diff: " << falldiff << std::endl;
             m_Player->BoxChat << "Gravity hack" << std::endl;
-        }
+        }*/
     
         m_Player->TeleportToPos(storedMapID, storedmoveInfo->GetPos(), TELE_TO_NOT_LEAVE_COMBAT);
     

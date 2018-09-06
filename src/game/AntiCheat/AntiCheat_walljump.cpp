@@ -26,8 +26,8 @@ bool AntiCheat_walljump::HandleMovement(const MovementInfoPtr& MoveInfo, Opcodes
             {
 				m_Player->TeleportToPos(storedMapID, storedmoveInfo->GetPos(), TELE_TO_NOT_LEAVE_COMBAT);
 
-                if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
-                    m_Player->BoxChat << "Jumpclimbing angle: " << angle << "\n";
+                //if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
+                    //m_Player->BoxChat << "Jumpclimbing angle: " << angle << "\n";
 
                 cheat = true;
             }

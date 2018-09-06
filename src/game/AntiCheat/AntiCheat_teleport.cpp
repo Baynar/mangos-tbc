@@ -22,8 +22,8 @@ bool AntiCheat_teleport::HandleMovement(const MovementInfoPtr& MoveInfo, Opcodes
         {
 			m_Player->TeleportToPos(oldMapID, oldmoveInfo->GetPos(), TELE_TO_NOT_LEAVE_COMBAT);
 
-            if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
-                m_Player->BoxChat << "TELE CHEAT" << "\n";
+            //if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
+               // m_Player->BoxChat << "TELE CHEAT" << "\n";
 
             return SetOldMoveInfo(true);
         }

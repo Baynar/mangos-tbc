@@ -10,7 +10,7 @@ extern void AddSC_battleground();
 // custom
 extern void AddSC_npc_professions();
 extern void AddSC_npc_healbuff();
-extern void AddSC_transmogrify_script();
+//extern void AddSC_transmogrify_script();
 
 // examples
 extern void AddSC_example_creature();
@@ -353,7 +353,7 @@ void AddScripts()
     // custom
 	AddSC_npc_professions();
 	AddSC_npc_healbuff();
-	AddSC_transmogrify_script();
+	//AddSC_transmogrify_script();
 
     // examples
     AddSC_example_creature();

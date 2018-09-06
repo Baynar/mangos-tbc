@@ -30,8 +30,8 @@ bool AntiCheat_tptoplane::HandleMovement(const MovementInfoPtr& MoveInfo, Opcode
 
 		m_Player->TeleportToPos(oldMapID, oldmoveInfo->GetPos(), TELE_TO_NOT_LEAVE_COMBAT);
 
-        if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
-            m_Player->BoxChat << "TELEPORT TO PLANE CHEAT" << "\n";
+        //if (m_Player->GetSession()->GetSecurity() > SEC_PLAYER)
+            //m_Player->BoxChat << "TELEPORT TO PLANE CHEAT" << "\n";
 
         return SetOldMoveInfo(true);
     }

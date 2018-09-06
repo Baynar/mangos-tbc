@@ -15,7 +15,7 @@ bool AntiCheat_test::HandleMovement(const MovementInfoPtr& MoveInfo, Opcodes opc
 
     float angle = std::atan2(GetDistanceZ(), GetDistance2D()) * 180.f / M_PI_F;
 
-    m_Player->BoxChat << "cosAngle: " << newmoveInfo->GetJumpInfo().cosAngle << "\n";
+    /*m_Player->BoxChat << "cosAngle: " << newmoveInfo->GetJumpInfo().cosAngle << "\n";
     m_Player->BoxChat << "sinAngle: " << newmoveInfo->GetJumpInfo().sinAngle << "\n";
     m_Player->BoxChat << "velocity: " << newmoveInfo->GetJumpInfo().velocity << "\n";
     m_Player->BoxChat << "xyspeed: " << newmoveInfo->GetJumpInfo().xyspeed << "\n";
@@ -27,7 +27,7 @@ bool AntiCheat_test::HandleMovement(const MovementInfoPtr& MoveInfo, Opcodes opc
     m_Player->BoxChat << "falling: " << (isFalling(newmoveInfo) ? "true" : "false") << "\n";
     m_Player->BoxChat << "flying: " << (isFlying(newmoveInfo) ? "true" : "false") << "\n";
     m_Player->BoxChat << "transport: " << (isTransport(newmoveInfo) ? "true" : "false") << "\n";
-    m_Player->BoxChat << "slowfall: " << (newmoveInfo->HasMovementFlag(MOVEFLAG_SAFE_FALL) ? "true" : "false") << "\n";
+    m_Player->BoxChat << "slowfall: " << (newmoveInfo->HasMovementFlag(MOVEFLAG_SAFE_FALL) ? "true" : "false") << "\n";*/
 
     return SetOldMoveInfo(false);
 }
