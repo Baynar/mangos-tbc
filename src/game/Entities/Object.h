@@ -27,6 +27,7 @@
 #include "Globals/SharedDefines.h"
 #include "Camera.h"
 #include "Server/DBCStructure.h"
+//#include "Entities/Unit.h"
 
 #include <set>
 

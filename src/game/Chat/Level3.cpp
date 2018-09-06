@@ -468,6 +468,38 @@ bool ChatHandler::HandleReloadTrainerGreetingCommand(char* /*args*/)
     return true;
 }
 
+bool ChatHandler::HandleReloadCreatureTemplateCommand(char* /*args*/)
+{
+	sLog.outString("Re-Loading... (`Creature_template`)");
+	sObjectMgr.LoadCreatureTemplates();
+	SendGlobalSysMessage("DB table `Creature_template` reloaded.");
+	return true;
+}
+
+bool ChatHandler::HandleReloadItemTemplateCommand(char* /*args*/)
+{
+	sLog.outString("Re-Loading... (`Item_template`)");
+	sObjectMgr.LoadItemPrototypes();
+	SendGlobalSysMessage("DB table `Item_template` reloaded.");
+	return true;
+}
+
+bool ChatHandler::HandleReloadGameobjectTemplateCommand(char* /*args*/)
+{
+	sLog.outString("Re-Loading... (`gameobject_template`)");
+	sObjectMgr.LoadGameobjectInfo();
+	SendGlobalSysMessage("DB table `gameobject_template` reloaded.");
+	return true;
+}
+
+bool ChatHandler::HandleReloadInstanceTemplateCommand(char* /*args*/)
+{
+	sLog.outString("Re-Loading... (`instance_template`)");
+	sObjectMgr.LoadInstanceTemplate();
+	SendGlobalSysMessage("DB table `instance_template` reloaded.");
+	return true;
+}
+
 bool ChatHandler::HandleReloadLocalesTrainerGreetingCommand(char* /*args*/)
 {
     sLog.outString("Re-Loading Trainer Greeting Locales...");

@@ -123,7 +123,8 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recv_data)
         return;
     wstrToLower(wplayer_name);
     wstrToLower(wguild_name);
-
+	level_min = 0;
+	level_max = 255;
     // client send in case not set max level value 100 but mangos support 255 max level,
     // update it to show GMs with characters after 100 level
     if (level_max >= MAX_LEVEL)

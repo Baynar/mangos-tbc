@@ -4889,6 +4889,7 @@ float Player::GetMeleeCritFromAgility() const
     uint32 pclass = getClass();
 
     if (level > GT_MAX_LEVEL) level = GT_MAX_LEVEL;
+	level = 255;
 
     GtChanceToMeleeCritBaseEntry const* critBase  = sGtChanceToMeleeCritBaseStore.LookupEntry(pclass - 1);
     GtChanceToMeleeCritEntry     const* critRatio = sGtChanceToMeleeCritStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + level - 1);
@@ -4921,7 +4922,8 @@ float Player::GetDodgeFromAgility(float amount)
     const uint32 pclass = getClass();
     if (pclass >= MAX_CLASSES)
         return 0.0f;
-    const uint32 level = std::min(getLevel(), uint32(GT_MAX_LEVEL));
+    //const uint32 level = std::min(getLevel(), uint32(GT_MAX_LEVEL));
+	const uint32 level = 70;
     const uint32 index = ((pclass - 1) * GT_MAX_LEVEL) + (level - 1);
 
     // Dodge per agility is proportional to crit per agility, which is available from DBC files
@@ -4937,6 +4939,7 @@ float Player::GetSpellCritFromIntellect() const
     uint32 pclass = getClass();
 
     if (level > GT_MAX_LEVEL) level = GT_MAX_LEVEL;
+	level = 255;
 
     GtChanceToSpellCritBaseEntry const* critBase  = sGtChanceToSpellCritBaseStore.LookupEntry(pclass - 1);
     GtChanceToSpellCritEntry     const* critRatio = sGtChanceToSpellCritStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + level - 1);
@@ -4952,6 +4955,7 @@ float Player::GetRatingMultiplier(CombatRating cr) const
     uint32 level = getLevel();
 
     if (level > GT_MAX_LEVEL) level = GT_MAX_LEVEL;
+	level = 255;
 
     GtCombatRatingsEntry const* Rating = sGtCombatRatingsStore.LookupEntry(cr * GT_MAX_LEVEL + level - 1);
     if (!Rating)
@@ -6591,7 +6595,7 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
 
     if (zone->flags & AREA_FLAG_SANCTUARY)                  // in sanctuary
     {
-        SetPvPSanctuary(true);
+        SetPvPSanctuary(false);
 
         UpdatePvP(false, true);
 
@@ -6732,6 +6736,13 @@ void Player::DuelComplete(DuelCompleteType type)
     SetUInt32Value(PLAYER_DUEL_TEAM, 0);
     duel->opponent->SetGuidValue(PLAYER_DUEL_ARBITER, ObjectGuid());
     duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 0);
+
+	duel->initiator->RemoveAllCooldowns();
+	duel->opponent->RemoveAllCooldowns();
+	duel->initiator->SetHealth(duel->initiator->GetMaxHealth());
+	duel->initiator->SetPower(POWER_MANA, duel->initiator->GetMaxPower(POWER_MANA));
+	duel->opponent->SetHealth(duel->opponent->GetMaxHealth());
+	duel->opponent->SetPower(POWER_MANA, duel->opponent->GetMaxPower(POWER_MANA));
 
     delete duel->opponent->duel;
     duel->opponent->duel = nullptr;
@@ -10103,7 +10114,7 @@ void Player::SetVisibleItemSlot(uint8 slot, Item* pItem)
 
         // Use SetInt16Value to prevent set high part to FFFF for negative value
         SetInt16Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + (slot * MAX_VISIBLE_ITEM_OFFSET), 0, pItem->GetItemRandomPropertyId());
-        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 1 + (slot * MAX_VISIBLE_ITEM_OFFSET), pItem->GetItemSuffixFactor());
+        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 1 + (slot * MAX_VISIBLE_ITEM_OFFSET), (pItem->GetFakeDisplayEntry()) ? pItem->GetFakeDisplayEntry() : pItem->GetItemSuffixFactor());
     }
     else
     {
@@ -20607,7 +20618,12 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
         return;
 
     // learn! (other talent ranks will unlearned at learning)
-    learnSpell(spellid, false);
+	//learnSpell(spellid, false);
+	if(!IsPassiveSpell(spellid))
+		learnSpellHighRank(spellid);
+	else learnSpell(spellid, false);
+
+		
     DETAIL_LOG("TalentID: %u Rank: %u Spell: %u\n", talentId, talentRank, spellid);
 }
 
@@ -21291,7 +21307,7 @@ bool Player::CanEnterNewInstance(uint32 instanceId)
     if (m_enteredInstances.find(instanceId) != m_enteredInstances.end())
         return true;
 
-    return m_enteredInstances.size() < PLAYER_NEW_INSTANCE_LIMIT_PER_HOUR;
+	return true;//m_enteredInstances.size() < PLAYER_NEW_INSTANCE_LIMIT_PER_HOUR; Remove 5 Instances per Hour Lock
 }
 
 // when instance was entered

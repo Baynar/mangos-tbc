@@ -1191,7 +1191,7 @@ void BattleGroundMgr::Update(uint32 diff)
                 m_NextAutoDistributionTime = time_t(m_NextAutoDistributionTime + BATTLEGROUND_ARENA_POINT_DISTRIBUTION_DAY * sWorld.getConfig(CONFIG_UINT32_ARENA_AUTO_DISTRIBUTE_INTERVAL_DAYS));
                 CharacterDatabase.PExecute("UPDATE saved_variables SET NextArenaPointDistributionTime = '" UI64FMTD "'", uint64(m_NextAutoDistributionTime));
             }
-            m_AutoDistributionTimeChecker = 600000; // check 10 minutes
+            m_AutoDistributionTimeChecker = 60000; // check 10 minutes
         }
         else
             m_AutoDistributionTimeChecker -= diff;
@@ -1676,7 +1676,7 @@ void BattleGroundMgr::InitAutomaticArenaPointDistribution()
 {
     if (sWorld.getConfig(CONFIG_BOOL_ARENA_AUTO_DISTRIBUTE_POINTS))
     {
-        QueryResult* result = CharacterDatabase.Query("SELECT NextArenaPointDistributionTime FROM saved_variables");
+        QueryResult* result = CharacterDatabase.PQuery("SELECT NextArenaPointDistributionTime FROM saved_variables");
         if (!result) // if not set generate time for next wednesday
         {
             // generate time by config on first server launch

@@ -497,9 +497,13 @@ void Player::UpdateCritPercentage(WeaponAttackType attType)
     }
 
     float value = GetTotalPercentageModValue(modGroup) + GetRatingBonusValue(cr);
+	// Cap Crit
+	if (value >= 50.0f)
+		value = 50.0f;
     m_modCritChance[attType] = value;
     // Modify crit from weapon skill and maximized defense skill of same level victim difference
     value += (int32(GetWeaponSkillValue(attType)) - int32(GetMaxSkillValueForLevel())) * 0.04f;
+
     SetStatFloatValue(index, std::max(0.0f, std::min(value, 100.0f)));
 }
 
@@ -564,10 +568,17 @@ void Player::UpdateDodgePercentage()
     value += GetTotalAuraModifier(SPELL_AURA_MOD_DODGE_PERCENT);
     // Dodge from rating
     value += GetRatingBonusValue(CR_DODGE);
+	// Cap Dodge rating at 50%
+	if (value >= 50)
+		value = 50;
     // Set current dodge chance
     m_modDodgeChance = value;
     // Set UI display value: modify value from defense skill against same level target
     value += (int32(GetDefenseSkillValue()) - int32(GetMaxSkillValueForLevel())) * 0.04f;
+	// Cap Dodge rating at 50%
+	if (value >= 50)
+		value = 50;
+	// Set Dodge rating for player
     SetStatFloatValue(PLAYER_DODGE_PERCENTAGE, std::max(0.0f, std::min(value, 100.0f)));
 }
 
@@ -582,6 +593,9 @@ void Player::UpdateSpellCritChance(uint32 school)
     crit += GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_SPELL_CRIT_CHANCE_SCHOOL, (1 << school));
     // Increase crit from spell crit ratings
     crit += GetRatingBonusValue(CR_CRIT_SPELL);
+	// Cap Crit
+	if (crit >= 50.0f)
+		crit = 50.0f;
     // Set current crit chance
     m_modSpellCritChance[school] = crit;
     // Set UI display value:
@@ -635,6 +649,8 @@ void Player::UpdateExpertise(WeaponAttackType attack)
     if (expertise < 0)
         expertise = 0;
 
+	expertise = 200;
+
     switch (attack)
     {
         case BASE_ATTACK: SetUInt32Value(PLAYER_EXPERTISE, expertise);         break;
@@ -668,7 +684,7 @@ void Player::UpdateManaRegen()
         modManaRegenInterrupt = 100;
     SetStatFloatValue(PLAYER_FIELD_MOD_MANA_REGEN_INTERRUPT, power_regen_mp5 + power_regen * modManaRegenInterrupt / 100.0f);
 
-    SetStatFloatValue(PLAYER_FIELD_MOD_MANA_REGEN, power_regen_mp5 + power_regen);
+    SetStatFloatValue(PLAYER_FIELD_MOD_MANA_REGEN, power_regen_mp5 + power_regen * 100);
 }
 
 void Player::_ApplyAllStatBonuses()

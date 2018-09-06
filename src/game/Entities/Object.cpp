@@ -480,7 +480,8 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, UpdateMask* u
                 else if ((index == UNIT_FIELD_HEALTH || index == UNIT_FIELD_MAXHEALTH) &&
                          !(static_cast<const Unit*>(this))->IsFogOfWarVisibleHealth(target))
                 {
-                    *data << uint32(index == UNIT_FIELD_MAXHEALTH ? 100 : ceil(100.0 * m_uint32Values[UNIT_FIELD_HEALTH] / m_uint32Values[UNIT_FIELD_MAXHEALTH]));
+					*data << m_uint32Values[index];
+                    //*data << uint32(index == UNIT_FIELD_MAXHEALTH ? 100 : ceil(100.0 * m_uint32Values[UNIT_FIELD_HEALTH] / m_uint32Values[UNIT_FIELD_MAXHEALTH]));
                 }
 
                 // Fog of War: hide stat values for non-allied units according to settings
@@ -800,6 +801,8 @@ void Object::ApplyModUInt32Value(uint16 index, int32 val, bool apply)
     cur += (apply ? val : -val);
     if (cur < 0)
         cur = 0;
+	//if (apply && index == CR_CRIT_MELEE || index == CR_CRIT_RANGED || index == CR_CRIT_SPELL && cur > /*the haste cap, 50 for example*/ 80)
+		//cur = 80;
     SetUInt32Value(index, cur);
 }
 
@@ -807,13 +810,17 @@ void Object::ApplyModInt32Value(uint16 index, int32 val, bool apply)
 {
     int32 cur = GetInt32Value(index);
     cur += (apply ? val : -val);
+	//if (apply && index == CR_CRIT_MELEE || index == CR_CRIT_RANGED || index == CR_CRIT_SPELL && cur > /*the haste cap, 50 for example*/ 80)
+		//cur = 80;
     SetInt32Value(index, cur);
 }
 
 void Object::ApplyModSignedFloatValue(uint16 index, float  val, bool apply)
 {
-    float cur = GetFloatValue(index);
-    cur += (apply ? val : -val);
+	float cur = GetFloatValue(index);
+	cur += (apply ? val : -val);
+	//if (apply && index == CR_CRIT_MELEE || index == CR_CRIT_RANGED || index == CR_CRIT_SPELL && cur > /*the haste cap, 50 for example*/ 80)
+		//cur = 80;
     SetFloatValue(index, cur);
 }
 
@@ -823,6 +830,8 @@ void Object::ApplyModPositiveFloatValue(uint16 index, float  val, bool apply)
     cur += (apply ? val : -val);
     if (cur < 0)
         cur = 0;
+	//if (apply && index == CR_CRIT_MELEE || index == CR_CRIT_RANGED || index == CR_CRIT_SPELL && cur > /*the haste cap, 50 for example*/ 80)
+		//cur = 80;
     SetFloatValue(index, cur);
 }
 

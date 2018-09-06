@@ -2496,6 +2496,7 @@ float Unit::CalculateLevelPenalty(SpellEntry const* spellProto) const
 {
     uint32 spellLevel = spellProto->spellLevel;
     uint32 maxSpellLevel = spellProto->maxLevel;
+	uint32 unitlevel = float(getLevel());
     if (spellLevel <= 0 || spellLevel >= maxSpellLevel) // spells which have lower max level are not subject to this
         return 1.0f;
 
@@ -2503,7 +2504,10 @@ float Unit::CalculateLevelPenalty(SpellEntry const* spellProto) const
 
     if (spellLevel < 20)
         LvlPenalty = (20.0f - spellLevel) * 3.75f;
-    float LvlFactor = (float(maxSpellLevel) + 6.0f) / float(getLevel());
+	if (unitlevel >= 70)
+		unitlevel = 70;
+
+    float LvlFactor = (float(maxSpellLevel) + 6.0f) / float(unitlevel);
     if (LvlFactor > 1.0f)
         LvlFactor = 1.0f;
 
@@ -2613,7 +2617,8 @@ SpellMissInfo Unit::SpellHitResult(Unit* pVictim, SpellEntry const* spell, bool 
 
         return SPELL_MISS_NONE;
     }
-    // !!!UNHACKME: Self-resists suppression hack for channeled spells until spell execution is modernized with effectmasks: Drain Soul, Blizzard, RoF
+    // !!!UNHACKME: Self-resists suppression hack for channeled spells until spell execution is modernized with effect
+	// Drain Soul, Blizzard, RoF
     if (pVictim == this && IsChanneledSpell(spell))
     {
         for (uint32 i = EFFECT_INDEX_0; i < MAX_EFFECT_INDEX; ++i)

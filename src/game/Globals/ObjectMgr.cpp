@@ -1400,7 +1400,7 @@ void ObjectMgr::LoadCreatures()
         {
             if (data.spawndist != 0.0f)
             {
-                sLog.outErrorDb("Table `creature` have creature (GUID: %u Entry: %u) with `MovementType`=0 (idle) have `spawndist`<>0, set to 0.", guid, data.id);
+                //sLog.outErrorDb("Table `creature` have creature (GUID: %u Entry: %u) with `MovementType`=0 (idle) have `spawndist`<>0, set to 0.", guid, data.id);
                 data.spawndist = 0.0f;
             }
         }
@@ -1832,6 +1832,148 @@ struct SQLItemLoader : public SQLStorageLoaderBase<SQLItemLoader, SQLStorage>
     }
 };
 
+// Sending cache data for reloaded items
+static const void SendCachePackets(Player* player, ItemPrototype const* pProto)
+{
+	if (!player || !pProto)
+		return;
+
+	int loc_idx = player->GetSession()->GetSessionDbLocaleIndex();
+
+	std::string name = pProto->Name1;
+	std::string description = pProto->Description;
+	sObjectMgr.GetItemLocaleStrings(pProto->ItemId, loc_idx, &name, &description);
+
+	// guess size
+	WorldPacket data(SMSG_ITEM_QUERY_SINGLE_RESPONSE, 600);
+	data << pProto->ItemId;
+	data << pProto->Class;
+	data << pProto->SubClass;
+	data << uint32(-1);                                 // new 2.0.3, not exist in wdb cache?
+	data << name;
+	data << uint8(0x00);                                // pProto->Name2; // blizz not send name there, just uint8(0x00); <-- \0 = empty string = empty name...
+	data << uint8(0x00);                                // pProto->Name3; // blizz not send name there, just uint8(0x00);
+	data << uint8(0x00);                                // pProto->Name4; // blizz not send name there, just uint8(0x00);
+	data << pProto->DisplayInfoID;
+	data << pProto->Quality;
+	data << pProto->Flags;
+	data << pProto->BuyPrice;
+	data << pProto->SellPrice;
+	data << pProto->InventoryType;
+	data << pProto->AllowableClass;
+	data << pProto->AllowableRace;
+	data << pProto->ItemLevel;
+	data << pProto->RequiredLevel;
+	data << pProto->RequiredSkill;
+	data << pProto->RequiredSkillRank;
+	data << pProto->RequiredSpell;
+	data << pProto->RequiredHonorRank;
+	data << pProto->RequiredCityRank;
+	data << pProto->RequiredReputationFaction;
+	data << pProto->RequiredReputationRank;
+	data << pProto->MaxCount;
+	data << pProto->Stackable;
+	data << pProto->ContainerSlots;
+	for (int i = 0; i < MAX_ITEM_PROTO_STATS; ++i)
+	{
+		data << pProto->ItemStat[i].ItemStatType;
+		data << pProto->ItemStat[i].ItemStatValue;
+	}
+	for (int i = 0; i < MAX_ITEM_PROTO_DAMAGES; ++i)
+	{
+		data << pProto->Damage[i].DamageMin;
+		data << pProto->Damage[i].DamageMax;
+		data << pProto->Damage[i].DamageType;
+	}
+
+	// resistances (7)
+	data << pProto->Armor;
+	data << pProto->HolyRes;
+	data << pProto->FireRes;
+	data << pProto->NatureRes;
+	data << pProto->FrostRes;
+	data << pProto->ShadowRes;
+	data << pProto->ArcaneRes;
+
+	data << pProto->Delay;
+	data << pProto->AmmoType;
+	data << pProto->RangedModRange;
+
+	for (int s = 0; s < MAX_ITEM_PROTO_SPELLS; ++s)
+	{
+		// send DBC data for cooldowns in same way as it used in Spell::SendSpellCooldown
+		// use `item_template` or if not set then only use spell cooldowns
+		SpellEntry const* spell = sSpellTemplate.LookupEntry<SpellEntry>(pProto->Spells[s].SpellId);
+		if (spell)
+		{
+			bool db_data = pProto->Spells[s].SpellCooldown >= 0 || pProto->Spells[s].SpellCategoryCooldown >= 0;
+
+			data << pProto->Spells[s].SpellId;
+			data << pProto->Spells[s].SpellTrigger;
+
+			// let the database control the sign here.  negative means that the item should be consumed once the charges are consumed.
+			data << pProto->Spells[s].SpellCharges;
+
+			if (db_data)
+			{
+				data << uint32(pProto->Spells[s].SpellCooldown);
+				data << uint32(pProto->Spells[s].SpellCategory);
+				data << uint32(pProto->Spells[s].SpellCategoryCooldown);
+			}
+			else
+			{
+				data << uint32(spell->RecoveryTime);
+				data << uint32(spell->Category);
+				data << uint32(spell->CategoryRecoveryTime);
+			}
+		}
+		else
+		{
+			data << uint32(0);
+			data << uint32(0);
+			data << uint32(0);
+			data << uint32(-1);
+			data << uint32(0);
+			data << uint32(-1);
+		}
+	}
+	data << pProto->Bonding;
+	data << description;
+	data << pProto->PageText;
+	data << pProto->LanguageID;
+	data << pProto->PageMaterial;
+	data << pProto->StartQuest;
+	data << pProto->LockID;
+	data << pProto->Material;
+	data << pProto->Sheath;
+	data << pProto->RandomProperty;
+	data << pProto->RandomSuffix;
+	data << pProto->Block;
+	data << pProto->ItemSet;
+	data << pProto->MaxDurability;
+	data << pProto->Area;
+	data << pProto->Map;                                // Added in 1.12.x & 2.0.1 client branch
+	data << pProto->BagFamily;
+	data << pProto->TotemCategory;
+	for (int s = 0; s < MAX_ITEM_PROTO_SOCKETS; ++s)
+	{
+		data << pProto->Socket[s].Color;
+		data << pProto->Socket[s].Content;
+	}
+	data << uint32(pProto->socketBonus);
+	data << uint32(pProto->GemProperties);
+	data << int32(pProto->RequiredDisenchantSkill);
+	data << float(pProto->ArmorDamageModifier);
+	data << uint32(pProto->Duration);                   // added in 2.4.2.8209, duration (seconds)
+
+	player->GetSession()->SendPacket(data);
+
+	ObjectGuid itemGuid;
+
+	if (Item* item = player->GetItemByGuid(itemGuid))
+		player->_ApplyItemMods(item, item->GetSlot(), true);
+}
+
 void ObjectMgr::LoadItemPrototypes()
 {
     SQLItemLoader loader;
@@ -1881,7 +2023,7 @@ void ObjectMgr::LoadItemPrototypes()
         }
         else
         {
-            sLog.outErrorDb("Item (Entry: %u) not correct (not listed in list of existing items).", i);
+            //sLog.outErrorDb("Item (Entry: %u) not correct (not listed in list of existing items).", i);
         }
 
         if (proto->Class >= MAX_ITEM_CLASS)
@@ -2279,6 +2421,18 @@ void ObjectMgr::LoadItemPrototypes()
                 }
             }
         }
+
+		std::list< std::pair<std::string, bool> > names;
+
+		{
+			HashMapHolder<Player>::ReadGuard g(HashMapHolder<Player>::GetLock());
+			HashMapHolder<Player>::MapType& m = sObjectAccessor.GetPlayers();
+			for (HashMapHolder<Player>::MapType::const_iterator itr = m.begin(); itr != m.end(); ++itr)
+			{
+				Player* player = itr->second;
+				SendCachePackets(player, proto);
+			}
+		}
     }
 
     // check some dbc referenced items (avoid duplicate reports)
@@ -2500,7 +2654,7 @@ void ObjectMgr::LoadPetLevelInfo()
         {
             if (pInfo[level].health == 0)
             {
-                sLog.outErrorDb("Creature %u has no data for Level %i pet stats data, using data of Level %i.", itr->first, level + 1, level);
+                //sLog.outErrorDb("Creature %u has no data for Level %i pet stats data, using data of Level %i.", itr->first, level + 1, level);
                 pInfo[level] = pInfo[level - 1];
             }
         }
@@ -2896,7 +3050,7 @@ void ObjectMgr::LoadPlayerInfo()
         {
             if (pClassInfo->levelInfo[level].basehealth == 0)
             {
-                sLog.outErrorDb("Class %i Level %i does not have health/mana data. Using stats data of level %i.", class_, level + 1, level);
+                //sLog.outErrorDb("Class %i Level %i does not have health/mana data. Using stats data of level %i.", class_, level + 1, level);
                 pClassInfo->levelInfo[level] = pClassInfo->levelInfo[level - 1];
             }
         }
@@ -3013,7 +3167,7 @@ void ObjectMgr::LoadPlayerInfo()
             {
                 if (pInfo->levelInfo[level].stats[0] == 0)
                 {
-                    sLog.outErrorDb("Race %i Class %i Level %i does not have stats data. Using stats data of level %i.", race, class_, level + 1, level);
+                    //sLog.outErrorDb("Race %i Class %i Level %i does not have stats data. Using stats data of level %i.", race, class_, level + 1, level);
                     pInfo->levelInfo[level] = pInfo->levelInfo[level - 1];
                 }
             }
@@ -3080,7 +3234,7 @@ void ObjectMgr::LoadPlayerInfo()
     {
         if (mPlayerXPperLevel[level] == 0)
         {
-            sLog.outErrorDb("Level %i does not have XP for level data. Using data of level [%i] + 100.", level + 1, level);
+            //sLog.outErrorDb("Level %i does not have XP for level data. Using data of level [%i] + 100.", level + 1, level);
             mPlayerXPperLevel[level] = mPlayerXPperLevel[level - 1] + 100;
         }
     }
@@ -4384,6 +4538,54 @@ void ObjectMgr::LoadPetCreateSpells()
     sLog.outString();
     sLog.outString(">> Loaded %u pet create spells from table and %u from DBC", count, dcount);
 }
+
+uint32 ObjectMgr::GetFakeItemEntry(uint32 itemGuid)
+{
+	FakeItemsContainer::const_iterator itr = _fakeItemsStore.find(itemGuid);
+	if (itr != _fakeItemsStore.end())
+		return itr->second;
+	
+		return 0;
+	}
+
+void ObjectMgr::SetFekeItem(uint32 itemGuid, uint32 fakeEntry)
+ {
+	_fakeItemsStore[itemGuid] = fakeEntry;
+	}
+
+void ObjectMgr::RemoveFakeItem(uint32 itemGuid)
+{
+	FakeItemsContainer::iterator itr = _fakeItemsStore.find(itemGuid);
+	if (itr != _fakeItemsStore.end())
+		 _fakeItemsStore.erase(itr);
+	}
+
+void ObjectMgr::LoadFakeItems()
+{
+	QueryResult* result = CharacterDatabase.Query("SELECT `guid`, `fakeEntry` FROM `fake_items`");
+	
+		if (!result)
+		 {
+	sLog.outErrorDb(">> Loaded 0 fake items. DB table `fake_items` is empty.");
+	sLog.outString();
+		return;
+		}
+	
+		do
+		 {
+		Field * fields = result->Fetch();
+		
+			uint32 guid = fields[0].GetUInt32();
+		uint32 fakeEntry = fields[1].GetUInt32();
+		
+			_fakeItemsStore[guid] = fakeEntry;
+		}
+	while (result->NextRow());
+	
+	sLog.outString(">> Loaded %u fake items.", _fakeItemsStore.size());
+	sLog.outString();
+}
+
 
 void ObjectMgr::LoadItemTexts()
 {
