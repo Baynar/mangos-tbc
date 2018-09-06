@@ -40,6 +40,8 @@
 #include "Entities/Pet.h"
 #include "Social/SocialMgr.h"
 
+#include "Entities/CPlayer.h"
+
 void WorldSession::HandleRepopRequestOpcode(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_REPOP_REQUEST");
@@ -271,7 +273,7 @@ void WorldSession::HandleLogoutRequestOpcode(WorldPacket& /*recv_data*/)
     // Can not logout if...
     if (GetPlayer()->isInCombat() ||                        //...is in combat
             //...is jumping ...is falling
-            GetPlayer()->m_movementInfo.HasMovementFlag(MovementFlags(MOVEFLAG_FALLING | MOVEFLAG_FALLINGFAR)))
+			GetPlayer()->m_movementInfo->HasMovementFlag(MovementFlags(MOVEFLAG_FALLING | MOVEFLAG_FALLINGFAR)))
     {
         WorldPacket data(SMSG_LOGOUT_RESPONSE, (2 + 4)) ;
         data << (uint8)0xC;
@@ -1425,14 +1427,16 @@ void WorldSession::HandleMoveSetCanFlyAckOpcode(WorldPacket& recv_data)
     DEBUG_LOG("WORLD: Received opcode CMSG_MOVE_SET_CAN_FLY_ACK");
     // recv_data.hexlike();
 
-    MovementInfo movementInfo;
+	MovementInfoPtr movementInfo = std::make_shared<MovementInfo>(MovementInfo());
 
     recv_data >> Unused<uint64>();                          // guid
     recv_data >> Unused<uint32>();                          // unk
     recv_data >> movementInfo;
     recv_data >> Unused<uint32>();                          // unk2
 
-    _player->m_movementInfo.SetMovementFlags(movementInfo.GetMovementFlags());
+	_player->m_movementInfo->SetMovementFlags(movementInfo->GetMovementFlags());
+	
+	_player->ToCPlayer()->HandleAntiCheat(movementInfo, CMSG_MOVE_SET_CAN_FLY_ACK);
 }
 
 void WorldSession::HandleRequestPetInfoOpcode(WorldPacket& /*recv_data */)
