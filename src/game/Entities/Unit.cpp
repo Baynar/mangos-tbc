@@ -215,6 +215,7 @@ void MovementInfo::Read(ByteBuffer& data)
     data >> moveFlags;
     data >> moveFlags2;
     data >> time;
+	acTime = time;
     data >> pos.x;
     data >> pos.y;
     data >> pos.z;
@@ -305,6 +306,8 @@ Unit::Unit() :
     m_spellProcsHappening(false),
     m_auraUpdateMask(0)
 {
+	m_movementInfo = MovementInfoPtr(new MovementInfo());
+
     m_objectType |= TYPEMASK_UNIT;
     m_objectTypeId = TYPEID_UNIT;
     // 2.3.2 - 0x70
@@ -672,7 +675,7 @@ bool Unit::haveOffhandWeapon() const
 
 void Unit::SendHeartBeat()
 {
-    m_movementInfo.UpdateTime(WorldTimer::getMSTime());
+    m_movementInfo->UpdateTime(WorldTimer::getMSTime());
     WorldPacket data(MSG_MOVE_HEARTBEAT, 64);
     data << GetPackGUID();
     data << m_movementInfo;
@@ -2669,6 +2672,7 @@ float Unit::CalculateLevelPenalty(SpellEntry const* spellProto) const
 {
     uint32 spellLevel = spellProto->spellLevel;
     uint32 maxSpellLevel = spellProto->maxLevel;
+	uint32 unitlevel = float(getLevel());
     if (spellLevel <= 0 || spellLevel >= maxSpellLevel) // spells which have lower max level are not subject to this
         return 1.0f;
 
@@ -2676,7 +2680,10 @@ float Unit::CalculateLevelPenalty(SpellEntry const* spellProto) const
 
     if (spellLevel < 20)
         LvlPenalty = (20.0f - spellLevel) * 3.75f;
-    float LvlFactor = (float(maxSpellLevel) + 6.0f) / float(getLevel());
+	if (unitlevel >= 70)
+		unitlevel = 70;
+
+    float LvlFactor = (float(maxSpellLevel) + 6.0f) / float(unitlevel);
     if (LvlFactor > 1.0f)
         LvlFactor = 1.0f;
 
@@ -2786,7 +2793,8 @@ SpellMissInfo Unit::SpellHitResult(Unit* pVictim, SpellEntry const* spell, uint8
 
         return SPELL_MISS_NONE;
     }
-    // !!!UNHACKME: Self-resists suppression hack for channeled spells until spell execution is modernized with effectmasks: Drain Soul, Blizzard, RoF
+    // !!!UNHACKME: Self-resists suppression hack for channeled spells until spell execution is modernized with effect
+	// Drain Soul, Blizzard, RoF
     if (pVictim == this && IsChanneledSpell(spell))
     {
         for (uint32 i = EFFECT_INDEX_0; i < MAX_EFFECT_INDEX; ++i)
@@ -10037,7 +10045,7 @@ void Unit::SetImmobilizedState(bool apply, bool stun)
         else
         {
             // Clear unit movement flags
-            m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
+            m_movementInfo->SetMovementFlags(MOVEFLAG_NONE);
             SetRoot(true);
         }
     }
@@ -10045,7 +10053,7 @@ void Unit::SetImmobilizedState(bool apply, bool stun)
     {
         clearUnitState(state);
         // Prevent giving ability to move if more immobilizers are active
-        if (!hasUnitState(immobilized) && (player || m_movementInfo.HasMovementFlag(MOVEFLAG_ROOT)))
+        if (!hasUnitState(immobilized) && (player || m_movementInfo->HasMovementFlag(MOVEFLAG_ROOT)))
             SetRoot(false);
     }
 }
@@ -11099,7 +11107,7 @@ void Unit::UpdateSplineMovement(uint32 t_diff)
 
 void Unit::DisableSpline()
 {
-    m_movementInfo.RemoveMovementFlag(MovementFlags(MOVEFLAG_SPLINE_ENABLED | MOVEFLAG_FORWARD));
+    m_movementInfo->RemoveMovementFlag(MovementFlags(MOVEFLAG_SPLINE_ENABLED | MOVEFLAG_FORWARD));
     movespline->_Interrupt();
 }
 

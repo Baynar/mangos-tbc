@@ -184,6 +184,8 @@ typedef std::pair<ExclusiveQuestGroupsMap::const_iterator, ExclusiveQuestGroupsM
 typedef std::pair<ItemRequiredTargetMap::const_iterator, ItemRequiredTargetMap::const_iterator> ItemRequiredTargetMapBounds;
 typedef std::pair<QuestRelationsMap::const_iterator, QuestRelationsMap::const_iterator> QuestRelationsMapBounds;
 
+typedef std::map<uint32, uint32> FakeItemsContainer;
+
 struct PetLevelInfo
 {
     PetLevelInfo() : health(0), mana(0), armor(0) { for (unsigned short& stat : stats) stat = 0; }
@@ -683,6 +685,10 @@ class ObjectMgr
         static WorldTemplate const* GetWorldTemplate(uint32 map);                   ///< Wrapper for sWorldTemplate.LookupEntry
         static CreatureConditionalSpawn const* GetCreatureConditionalSpawn(uint32 lowguid); ///< Wrapper for sCreatureConditionalSpawnStore.LookupEntry
 
+		uint32 GetFakeItemEntry(uint32 itemGuid);
+		void SetFekeItem(uint32 itemGuid, uint32 fakeEntry);
+		void RemoveFakeItem(uint32 itemGuid);
+
         void LoadArenaTeams();
         void LoadGroups();
         void LoadQuests();
@@ -740,6 +746,8 @@ class ObjectMgr
 
         void LoadItemTexts();
         void LoadPageTexts();
+
+		void LoadFakeItems();
 
         void LoadPlayerInfo();
         void LoadPetLevelInfo();
@@ -1240,6 +1248,8 @@ class ObjectMgr
         QuestRelationsMap       m_CreatureQuestInvolvedRelations;
         QuestRelationsMap       m_GOQuestRelations;
         QuestRelationsMap       m_GOQuestInvolvedRelations;
+
+		FakeItemsContainer _fakeItemsStore;
 
         int DBCLocaleIndex;
 

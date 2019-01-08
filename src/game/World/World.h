@@ -345,6 +345,7 @@ enum eConfigBoolValues
     CONFIG_BOOL_PLAYER_COMMANDS,
     CONFIG_BOOL_PATH_FIND_OPTIMIZE,
     CONFIG_BOOL_PATH_FIND_NORMALIZE_Z,
+    CONFIG_BOOL_CFBG_ENABLED,
     CONFIG_BOOL_VALUE_COUNT
 };
 
@@ -716,6 +717,9 @@ class World
         static uint32 m_currentMSTime;
         static TimePoint m_currentTime;
         static uint32 m_currentDiff;
+
+    public:
+        const SessionMap GetSessions() { return m_sessions; }
 };
 
 extern uint32 realmID;
