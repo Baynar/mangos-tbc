@@ -663,12 +663,10 @@ MovementFlags const movementOrTurningFlagsMask = MovementFlags(
             movementFlagsMask | MOVEFLAG_TURN_LEFT | MOVEFLAG_TURN_RIGHT
         );
 
-typedef std::shared_ptr<MovementInfo> MovementInfoPtr;
-
 class MovementInfo
 {
     public:
-        MovementInfo() : moveFlags(MOVEFLAG_NONE), moveFlags2(0), time(0), acTime(0),
+        MovementInfo() : moveFlags(MOVEFLAG_NONE), moveFlags2(0), time(0),
             t_time(0), s_pitch(0.0f), fallTime(0), u_unk1(0.0f) {}
 
         // Read/Write methods
@@ -710,7 +708,6 @@ class MovementInfo
         void ChangePosition(float x, float y, float z, float o) { pos.x = x; pos.y = y; pos.z = z; pos.o = o; }
         void UpdateTime(uint32 _time) { time = _time; }
         uint32 GetTime() const { return time; }
-        uint32 GetACTime() const { return acTime; }
 
         struct JumpInfo
         {
@@ -724,7 +721,6 @@ class MovementInfo
         uint32   moveFlags;                                 // see enum MovementFlags
         uint8    moveFlags2;
         uint32   time;
-        uint32   acTime;
         Position pos;
         // transport
         ObjectGuid t_guid;
@@ -740,18 +736,6 @@ class MovementInfo
         float    u_unk1;
 };
 
-inline ByteBuffer& operator<< (ByteBuffer& buf, MovementInfoPtr mi)
-{
-    mi->Write(buf);
-    return buf;
-}
-
-inline ByteBuffer& operator>> (ByteBuffer& buf, MovementInfoPtr mi)
-{
-    mi->Read(buf);
-    return buf;
-}
-
 inline ByteBuffer& operator<< (ByteBuffer& buf, MovementInfo const& mi)
 {
     mi.Write(buf);
@@ -760,7 +744,7 @@ inline ByteBuffer& operator<< (ByteBuffer& buf, MovementInfo const& mi)
 
 inline ByteBuffer& operator>> (ByteBuffer& buf, MovementInfo& mi)
 {
-    mi.Write(buf);
+    mi.Read(buf);
     return buf;
 }
 
@@ -1854,10 +1838,10 @@ class Unit : public WorldObject
         // if used additional args in ... part then floats must explicitly casted to double
         void SendHeartBeat();
 
-        bool IsMoving() const { return m_movementInfo->HasMovementFlag(movementFlagsMask); }
-        bool IsLevitating() const { return m_movementInfo->HasMovementFlag(MOVEFLAG_LEVITATING); }
-        bool IsWalking() const { return m_movementInfo->HasMovementFlag(MOVEFLAG_WALK_MODE); }
-        bool IsRooted() const { return m_movementInfo->HasMovementFlag(MOVEFLAG_ROOT); }
+        bool IsMoving() const { return m_movementInfo.HasMovementFlag(movementFlagsMask); }
+        bool IsLevitating() const { return m_movementInfo.HasMovementFlag(MOVEFLAG_LEVITATING); }
+        bool IsWalking() const { return m_movementInfo.HasMovementFlag(MOVEFLAG_WALK_MODE); }
+        bool IsRooted() const { return m_movementInfo.HasMovementFlag(MOVEFLAG_ROOT); }
 
         virtual void SetLevitate(bool /*enabled*/) {}
         virtual void SetSwim(bool /*enabled*/) {}
@@ -2367,7 +2351,7 @@ class Unit : public WorldObject
         void RemovePetAura(PetAura const* petSpell);
 
         // Movement info
-        MovementInfoPtr m_movementInfo;
+        MovementInfo m_movementInfo;
         Movement::MoveSpline* movespline;
 
         void ScheduleAINotify(uint32 delay, bool forced = false);

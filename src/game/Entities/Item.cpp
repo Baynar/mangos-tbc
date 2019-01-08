@@ -242,8 +242,6 @@ Item::Item()
     mb_in_trade = false;
     m_lootState = ITEM_LOOT_NONE;
     m_enchantEffectModifier = nullptr;
-
-	m_fakeDisplayEntry = 0; // Transmog
 }
 
 Item::~Item()
@@ -434,9 +432,6 @@ bool Item::LoadFromDB(uint32 guidLow, Field* fields, ObjectGuid ownerGuid)
         return false;
     }
 
-	if (uint32 fakeEntry = sObjectMgr.GetFakeItemEntry(guidLow))
-		SetFakeDisplay(fakeEntry);
-
     bool need_save = false;                                 // need explicit save data at load fixes
 
     // overwrite possible wrong/corrupted guid
@@ -558,7 +553,6 @@ void Item::LoadLootFromDB(Field* fields)
 void Item::DeleteFromDB()
 {
     static SqlStatementID delItem ;
-	RemoveFakeDisplay();
 
     SqlStatement stmt = CharacterDatabase.CreateStatement(delItem, "DELETE FROM item_instance WHERE guid = ?");
     stmt.PExecute(GetGUIDLow());
@@ -567,7 +561,6 @@ void Item::DeleteFromDB()
 void Item::DeleteFromInventoryDB() const
 {
     static SqlStatementID delInv ;
-	//RemoveFakeDisplay();
 
     SqlStatement stmt = CharacterDatabase.CreateStatement(delInv, "DELETE FROM character_inventory WHERE item = ?");
     stmt.PExecute(GetGUIDLow());
@@ -1212,51 +1205,4 @@ void Item::SetLootState(ItemLootUpdateState state)
 
     if (m_lootState != ITEM_LOOT_NONE && m_lootState != ITEM_LOOT_UNCHANGED && m_lootState != ITEM_LOOT_TEMPORARY)
         SetState(ITEM_CHANGED);
-}
-
-FakeResult Item::SetFakeDisplay(uint32 iEntry)
-{
-	if (!iEntry)
-		{
-		RemoveFakeDisplay();
-		return FAKE_ERR_OK;
-		}
-	
-	ItemPrototype const* myTmpl = GetProto();
-	ItemPrototype const* otherTmpl = sObjectMgr.GetItemPrototype(iEntry);
-	
-		if (!otherTmpl)
-		 return FAKE_ERR_CANT_FIND_ITEM;
-	
-	if (myTmpl->InventoryType != otherTmpl->InventoryType)
-		 return FAKE_ERR_DIFF_SLOTS;
-	
-		if (myTmpl->AllowableClass != otherTmpl->AllowableClass)
-		 return FAKE_ERR_DIFF_CLASS;
-	
-		if (myTmpl->AllowableRace != otherTmpl->AllowableRace)
-		 return FAKE_ERR_DIFF_RACE;
-	
-		if (otherTmpl->Quality == ITEM_QUALITY_LEGENDARY || otherTmpl->Quality == ITEM_QUALITY_POOR)
-		 return FAKE_ERR_WRONG_QUALITY;
-	
-		if (m_fakeDisplayEntry != iEntry)
-		 {
-		sObjectMgr.SetFekeItem(GetGUIDLow(), iEntry);
-		
-			(!m_fakeDisplayEntry) ? CharacterDatabase.PExecute("INSERT INTO fake_items VALUES (%u, %u)", GetGUIDLow(), iEntry) :
-			CharacterDatabase.PExecute("UPDATE fake_items SET fakeEntry = %u WHERE guid = %u", iEntry, GetGUIDLow());
-		m_fakeDisplayEntry = iEntry;
-		}
-	
-		return FAKE_ERR_OK;
-	}
-
-void Item::RemoveFakeDisplay()
-{
-	if (GetFakeDisplayEntry())
-		{
-		m_fakeDisplayEntry = 0;
-		CharacterDatabase.PExecute("DELETE FROM fake_items WHERE guid = %u", GetGUIDLow());
-		}
 }

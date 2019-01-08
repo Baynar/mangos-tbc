@@ -147,17 +147,6 @@ enum SellResult
     SELL_ERR_ONLY_EMPTY_BAG                      = 6        // can only do with empty bags
 };
 
-enum FakeResult
-{
-	FAKE_ERR_CANT_FIND_OWNER,
-	FAKE_ERR_CANT_FIND_ITEM,
-	FAKE_ERR_WRONG_QUALITY,
-	FAKE_ERR_DIFF_SLOTS,
-	FAKE_ERR_DIFF_CLASS,
-	FAKE_ERR_DIFF_RACE,
-	FAKE_ERR_OK
-};
-
 // -1 from client enchantment slot number
 enum EnchantmentSlot
 {
@@ -376,10 +365,6 @@ class Item : public Object
         void AddToClientUpdateList() override;
         void RemoveFromClientUpdateList() override;
         void BuildUpdateData(UpdateDataMapType& update_players) override;
-
-		FakeResult SetFakeDisplay(uint32 iEntry);
-		uint32 GetFakeDisplayEntry() { return m_fakeDisplayEntry; }
-		void RemoveFakeDisplay();
     private:
         uint8 m_slot;
         Bag* m_container;
@@ -388,8 +373,6 @@ class Item : public Object
         bool mb_in_trade;                                   // true if item is currently in trade-window
         ItemLootUpdateState m_lootState;
         SpellModifier* m_enchantEffectModifier;
-
-		uint32 m_fakeDisplayEntry;
 };
 
 #endif
