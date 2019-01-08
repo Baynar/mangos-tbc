@@ -439,6 +439,10 @@ class ChatHandler
         bool HandleReloadGossipMenuCommand(char* args);
         bool HandleReloadQuestgiverGreetingCommand(char* args);
         bool HandleReloadTrainerGreetingCommand(char* args);
+		bool HandleReloadCreatureTemplateCommand(char* args);
+		bool HandleReloadItemTemplateCommand(char* args);
+		bool HandleReloadGameobjectTemplateCommand(char* args);
+		bool HandleReloadInstanceTemplateCommand(char* args);
         bool HandleReloadGOQuestRelationsCommand(char* args);
         bool HandleReloadGOQuestInvRelationsCommand(char* args);
         bool HandleReloadItemEnchantementsCommand(char* args);
@@ -520,6 +524,7 @@ class ChatHandler
         bool HandleServerLogFilterCommand(char* args);
         bool HandleServerLogLevelCommand(char* args);
         bool HandleServerMotdCommand(char* args);
+		bool HandleWorldChatCommand(char* args);
         bool HandleServerPLimitCommand(char* args);
         bool HandleServerResetAllRaidCommand(char* args);
         bool HandleServerRestartCommand(char* args);
