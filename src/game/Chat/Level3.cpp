@@ -57,8 +57,6 @@
 #include "Server/SQLStorages.h"
 #include "Loot/LootMgr.h"
 
-#include "Entities/CPlayer.h"
-
 static uint32 ahbotQualityIds[MAX_AUCTION_QUALITY] =
 {
     LANG_AHBOT_QUALITY_GREY, LANG_AHBOT_QUALITY_WHITE,
@@ -465,38 +463,6 @@ bool ChatHandler::HandleReloadTrainerGreetingCommand(char* /*args*/)
     sObjectMgr.LoadTrainerGreetings();
     SendGlobalSysMessage("DB table `trainer_greeting` reloaded.");
     return true;
-}
-
-bool ChatHandler::HandleReloadCreatureTemplateCommand(char* /*args*/)
-{
-	sLog.outString("Re-Loading... (`Creature_template`)");
-	sObjectMgr.LoadCreatureTemplates();
-	SendGlobalSysMessage("DB table `Creature_template` reloaded.");
-	return true;
-}
-
-bool ChatHandler::HandleReloadItemTemplateCommand(char* /*args*/)
-{
-	sLog.outString("Re-Loading... (`Item_template`)");
-	sObjectMgr.LoadItemPrototypes();
-	SendGlobalSysMessage("DB table `Item_template` reloaded.");
-	return true;
-}
-
-bool ChatHandler::HandleReloadGameobjectTemplateCommand(char* /*args*/)
-{
-	sLog.outString("Re-Loading... (`gameobject_template`)");
-	sObjectMgr.LoadGameobjectInfo();
-	SendGlobalSysMessage("DB table `gameobject_template` reloaded.");
-	return true;
-}
-
-bool ChatHandler::HandleReloadInstanceTemplateCommand(char* /*args*/)
-{
-	sLog.outString("Re-Loading... (`instance_template`)");
-	sObjectMgr.LoadInstanceTemplate();
-	SendGlobalSysMessage("DB table `instance_template` reloaded.");
-	return true;
 }
 
 bool ChatHandler::HandleReloadLocalesTrainerGreetingCommand(char* /*args*/)
@@ -5727,8 +5693,6 @@ bool ChatHandler::HandleGMFlyCommand(char* args)
         target = m_session->GetPlayer();
 
     target->SetCanFly(value);
-	target->ToCPlayer()->SetGMFly(value);
-
     PSendSysMessage(LANG_COMMAND_FLYMODE_STATUS, GetNameLink(target).c_str(), args);
     return true;
 }

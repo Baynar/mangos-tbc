@@ -65,8 +65,6 @@
 #include "World/WorldStateDefines.h"
 #include "World/WorldState.h"
 
-#include "Entities/CPlayer.h"
-
 #ifdef BUILD_PLAYERBOT
 #include "PlayerBot/Base/PlayerbotAI.h"
 #include "PlayerBot/Base/PlayerbotMgr.h"
@@ -797,8 +795,6 @@ bool Player::Create(uint32 guidlow, const std::string& name, uint8 race, uint8 c
     }
     // all item positions resolved
 
-	SetFakeValues();
-
     return true;
 }
 
@@ -1127,8 +1123,6 @@ void Player::Update(const uint32 diff)
 {
     if (!IsInWorld())
         return;
-
-	ToCPlayer()->CUpdate(update_diff, p_time);
 
     // Undelivered mail
     if (m_nextMailDelivereTime && m_nextMailDelivereTime <= time(nullptr))
@@ -1660,7 +1654,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     {
         m_transport->RemovePassenger(this);
         m_transport = nullptr;
-		m_movementInfo->ClearTransportData();
+        m_movementInfo.ClearTransportData();
     }
 
     // The player was ported to another map and looses the duel immediately.
@@ -1671,7 +1665,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             DuelComplete(DUEL_FLED);
 
     // reset movement flags at teleport, because player will continue move with these flags after teleport
-	m_movementInfo->SetMovementFlags(MOVEFLAG_NONE);
+    m_movementInfo.SetMovementFlags(MOVEFLAG_NONE);
     DisableSpline();
 
     if (!(options & TELE_TO_NOT_UNSUMMON_PET) || GetMapId() != mapid)
@@ -1748,7 +1742,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         // It will be created in the WorldPortAck.
         DungeonPersistentState* state = GetBoundInstanceSaveForSelfOrGroup(mapid);
         Map* map = sMapMgr.FindMap(mapid, state ? state->GetInstanceId() : 0);
-		if (!map || (GetMapId() != map->GetId() && map->CanEnter(this)))
+        if (!map || map->CanEnter(this))
         {
             // lets reset near teleport flag if it wasn't reset during chained teleports
             SetSemaphoreTeleportNear(false);
@@ -1817,7 +1811,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             float final_z = z;
             float final_o = orientation;
 
-			Position const* transportPosition = m_movementInfo->GetTransportPos();
+            Position const* transportPosition = m_movementInfo.GetTransportPos();
 
             if (m_transport)
             {
@@ -1863,7 +1857,6 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
         else                                                // !map->CanEnter(this)
             return false;
     }
-
     return true;
 }
 
@@ -4080,7 +4073,7 @@ void Player::SetLevitate(bool enable)
 
     // data.Initialize(MSG_MOVE_GRAVITY_CHNG, 64);
     // data << GetPackGUID();
-	// m_movementInfo->Write(data);
+    // m_movementInfo.Write(data);
     // SendMessageToSet(data, false);
 }
 
@@ -4098,7 +4091,7 @@ void Player::SetCanFly(bool enable)
 
     data.Initialize(MSG_MOVE_UPDATE_CAN_FLY, 64);
     data << GetPackGUID();
-	m_movementInfo->Write(data);
+    m_movementInfo.Write(data);
     SendMessageToSet(data, false);
 }
 
@@ -4794,7 +4787,6 @@ float Player::GetMeleeCritFromAgility() const
     uint32 pclass = getClass();
 
     if (level > GT_MAX_LEVEL) level = GT_MAX_LEVEL;
-	level = 255;
 
     GtChanceToMeleeCritBaseEntry const* critBase  = sGtChanceToMeleeCritBaseStore.LookupEntry(pclass - 1);
     GtChanceToMeleeCritEntry     const* critRatio = sGtChanceToMeleeCritStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + level - 1);
@@ -4827,8 +4819,7 @@ float Player::GetDodgeFromAgility(float amount) const
     const uint32 pclass = getClass();
     if (pclass >= MAX_CLASSES)
         return 0.0f;
-    //const uint32 level = std::min(getLevel(), uint32(GT_MAX_LEVEL));
-	const uint32 level = 70;
+    const uint32 level = std::min(getLevel(), uint32(GT_MAX_LEVEL));
     const uint32 index = ((pclass - 1) * GT_MAX_LEVEL) + (level - 1);
 
     // Dodge per agility is proportional to crit per agility, which is available from DBC files
@@ -4844,7 +4835,6 @@ float Player::GetSpellCritFromIntellect() const
     uint32 pclass = getClass();
 
     if (level > GT_MAX_LEVEL) level = GT_MAX_LEVEL;
-	level = 255;
 
     GtChanceToSpellCritBaseEntry const* critBase  = sGtChanceToSpellCritBaseStore.LookupEntry(pclass - 1);
     GtChanceToSpellCritEntry     const* critRatio = sGtChanceToSpellCritStore.LookupEntry((pclass - 1) * GT_MAX_LEVEL + level - 1);
@@ -4860,7 +4850,6 @@ float Player::GetRatingMultiplier(CombatRating cr) const
     uint32 level = getLevel();
 
     if (level > GT_MAX_LEVEL) level = GT_MAX_LEVEL;
-	level = 255;
 
     GtCombatRatingsEntry const* Rating = sGtCombatRatingsStore.LookupEntry(cr * GT_MAX_LEVEL + level - 1);
     if (!Rating)
@@ -6574,7 +6563,7 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
 
     if (zone->flags & AREA_FLAG_SANCTUARY)                  // in sanctuary
     {
-        SetPvPSanctuary(false);
+        SetPvPSanctuary(true);
 
         UpdatePvP(false, true);
 
@@ -6715,13 +6704,6 @@ void Player::DuelComplete(DuelCompleteType type)
     SetUInt32Value(PLAYER_DUEL_TEAM, 0);
     duel->opponent->SetGuidValue(PLAYER_DUEL_ARBITER, ObjectGuid());
     duel->opponent->SetUInt32Value(PLAYER_DUEL_TEAM, 0);
-
-	duel->initiator->RemoveAllCooldowns();
-	duel->opponent->RemoveAllCooldowns();
-	duel->initiator->SetHealth(duel->initiator->GetMaxHealth());
-	duel->initiator->SetPower(POWER_MANA, duel->initiator->GetMaxPower(POWER_MANA));
-	duel->opponent->SetHealth(duel->opponent->GetMaxHealth());
-	duel->opponent->SetPower(POWER_MANA, duel->opponent->GetMaxPower(POWER_MANA));
 
     delete duel->opponent->duel;
     duel->opponent->duel = nullptr;
@@ -10094,7 +10076,7 @@ void Player::SetVisibleItemSlot(uint8 slot, Item* pItem)
 
         // Use SetInt16Value to prevent set high part to FFFF for negative value
         SetInt16Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + (slot * MAX_VISIBLE_ITEM_OFFSET), 0, pItem->GetItemRandomPropertyId());
-        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 1 + (slot * MAX_VISIBLE_ITEM_OFFSET), (pItem->GetFakeDisplayEntry()) ? pItem->GetFakeDisplayEntry() : pItem->GetItemSuffixFactor());
+        SetUInt32Value(PLAYER_VISIBLE_ITEM_1_PROPERTIES + 1 + (slot * MAX_VISIBLE_ITEM_OFFSET), pItem->GetItemSuffixFactor());
     }
     else
     {
@@ -14428,8 +14410,6 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     setFactionForRace(getRace());
     SetCharm(nullptr);
 
-	SetFakeValues();
-
     // load home bind and check in same time class/race pair, it used later for restore broken positions
     if (!_LoadHomeBind(holder->GetResult(PLAYER_LOGIN_QUERY_LOADHOMEBIND)))
     {
@@ -14489,7 +14469,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
         transGUID = 0;
 
-		m_movementInfo->ClearTransportData();
+        m_movementInfo.ClearTransportData();
     }
 
     _LoadBGData(holder->GetResult(PLAYER_LOGIN_QUERY_LOADBGDATA));
@@ -14550,9 +14530,9 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
     if (transGUID != 0)
     {
-		m_movementInfo->SetTransportData(ObjectGuid(HIGHGUID_MO_TRANSPORT, transGUID), fields[26].GetFloat(), fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat(), 0);
+        m_movementInfo.SetTransportData(ObjectGuid(HIGHGUID_MO_TRANSPORT, transGUID), fields[26].GetFloat(), fields[27].GetFloat(), fields[28].GetFloat(), fields[29].GetFloat(), 0);
 
-		Position const* transportPosition = m_movementInfo->GetTransportPos();
+        Position const* transportPosition = m_movementInfo.GetTransportPos();
 
         if (!MaNGOS::IsValidMapCoord(
                     GetPositionX() + transportPosition->x, GetPositionY() + transportPosition->y,
@@ -14566,7 +14546,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
             RelocateToHomebind();
 
-			m_movementInfo->ClearTransportData();
+            m_movementInfo.ClearTransportData();
 
             transGUID = 0;
         }
@@ -14600,13 +14580,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
 
             RelocateToHomebind();
 
-<<<<<<< HEAD
             m_movementInfo.ClearTransportData();
-=======
-			m_movementInfo->ClearTransportData();
-
-            transGUID = 0;
->>>>>>> master
         }
     }
     else                                                    // not transport case
@@ -16011,7 +15985,7 @@ void Player::SaveToDB()
     uberInsert.addUInt32(GetGUIDLow());
     uberInsert.addUInt32(GetSession()->GetAccountId());
     uberInsert.addString(m_name);
-	uberInsert.addUInt8(getORace());
+    uberInsert.addUInt8(getRace());
     uberInsert.addUInt8(getClass());
     uberInsert.addUInt8(getGender());
     uberInsert.addUInt32(getLevel());
@@ -16059,7 +16033,7 @@ void Player::SaveToDB()
     uberInsert.addUInt32(m_resetTalentsCost);
     uberInsert.addUInt64(uint64(m_resetTalentsTime));
 
-	Position const* transportPosition = m_movementInfo->GetTransportPos();
+    Position const* transportPosition = m_movementInfo.GetTransportPos();
     uberInsert.addFloat(finiteAlways(transportPosition->x));
     uberInsert.addFloat(finiteAlways(transportPosition->y));
     uberInsert.addFloat(finiteAlways(transportPosition->z));
@@ -18860,7 +18834,7 @@ void Player::SendInitialPacketsBeforeAddToMap()
 
     // set fly flag if in fly form or taxi flight to prevent visually drop at ground in showup moment
     if (IsFreeFlying() || IsTaxiFlying())
-		m_movementInfo->AddMovementFlag(MOVEFLAG_FLYING);
+        m_movementInfo.AddMovementFlag(MOVEFLAG_FLYING);
 
     if(!GetSession()->PlayerLoading())
         SetMover(this);
@@ -20457,10 +20431,10 @@ InventoryResult Player::CanEquipUniqueItem(ItemPrototype const* itemProto, uint8
     return EQUIP_ERR_OK;
 }
 
-void Player::HandleFall(const MovementInfoPtr& movementInfo)
+void Player::HandleFall(MovementInfo const& movementInfo)
 {
     // calculate total z distance of the fall
-	Position const* position = movementInfo->GetPos();
+    Position const* position = movementInfo.GetPos();
     float z_diff = m_lastFallZ - position->z;
     DEBUG_LOG("zDiff = %f", z_diff);
 
@@ -20496,7 +20470,7 @@ void Player::HandleFall(const MovementInfoPtr& movementInfo)
             }
 
             // Z given by moveinfo, LastZ, FallTime, WaterZ, MapZ, Damage, Safefall reduction
-			DEBUG_LOG("FALLDAMAGE z=%f sz=%f pZ=%f FallTime=%d mZ=%f damage=%d SF=%d", position->z, height, GetPositionZ(), movementInfo->GetFallTime(), height, damage, safe_fall);
+            DEBUG_LOG("FALLDAMAGE z=%f sz=%f pZ=%f FallTime=%d mZ=%f damage=%d SF=%d", position->z, height, GetPositionZ(), movementInfo.GetFallTime(), height, damage, safe_fall);
         }
     }
 }
@@ -20613,28 +20587,14 @@ void Player::LearnTalent(uint32 talentId, uint32 talentRank)
         return;
 
     // learn! (other talent ranks will unlearned at learning)
-<<<<<<< HEAD
     learnSpell(spellid, false, true);
-=======
-	//learnSpell(spellid, false);
-	if(!IsPassiveSpell(spellid))
-		learnSpellHighRank(spellid);
-	else learnSpell(spellid, false);
-
-		
->>>>>>> master
     DETAIL_LOG("TalentID: %u Rank: %u Spell: %u\n", talentId, talentRank, spellid);
 }
 
-void Player::UpdateFallInformationIfNeed(const MovementInfoPtr& minfo, uint16 opcode)
+void Player::UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode)
 {
-<<<<<<< HEAD
     if (m_lastFallTime >= minfo.GetFallTime() || m_lastFallZ <= minfo.GetPos()->z || minfo.HasMovementFlag(MOVEFLAG_FLYING2) || opcode == MSG_MOVE_FALL_LAND)
         SetFallInformation(minfo.GetFallTime(), minfo.GetPos()->z);
-=======
-	if (m_lastFallTime >= minfo->GetFallTime() || m_lastFallZ <= minfo->GetPos()->z || opcode == MSG_MOVE_FALL_LAND)
-		SetFallInformation(minfo->GetFallTime(), minfo->GetPos()->z);
->>>>>>> master
 }
 
 void Player::UnsummonPetTemporaryIfAny()
@@ -20744,8 +20704,8 @@ void Player::SendClearCooldown(uint32 spell_id, Unit* target) const
 
 void Player::BuildTeleportAckMsg(WorldPacket& data, float x, float y, float z, float ang) const
 {
-	MovementInfoPtr mi = m_movementInfo;
-	mi->ChangePosition(x, y, z, ang);
+    MovementInfo mi = m_movementInfo;
+    mi.ChangePosition(x, y, z, ang);
 
     data.Initialize(MSG_MOVE_TELEPORT_ACK, 41);
     data << GetPackGUID();
@@ -20755,7 +20715,7 @@ void Player::BuildTeleportAckMsg(WorldPacket& data, float x, float y, float z, f
 
 bool Player::HasMovementFlag(MovementFlags f) const
 {
-	return m_movementInfo->HasMovementFlag(f);
+    return m_movementInfo.HasMovementFlag(f);
 }
 
 void Player::ResetTimeSync()
@@ -20885,8 +20845,6 @@ void Player::KnockBackFrom(Unit* target, float horizontalSpeed, float verticalSp
 {
     float angle = this == target ? GetOrientation() + M_PI_F : target->GetAngle(this);
     GetSession()->SendKnockBack(angle, horizontalSpeed, verticalSpeed);
-
-	ToCPlayer()->HandleKnockBack(angle, horizontalSpeed, verticalSpeed);
 }
 
 AreaLockStatus Player::GetAreaTriggerLockStatus(AreaTrigger const* at, uint32& miscRequirement)
@@ -21314,7 +21272,7 @@ bool Player::CanEnterNewInstance(uint32 instanceId)
     if (m_enteredInstances.find(instanceId) != m_enteredInstances.end())
         return true;
 
-	return true;//m_enteredInstances.size() < PLAYER_NEW_INSTANCE_LIMIT_PER_HOUR; Remove 5 Instances per Hour Lock
+    return m_enteredInstances.size() < PLAYER_NEW_INSTANCE_LIMIT_PER_HOUR;
 }
 
 // when instance was entered
@@ -21378,7 +21336,6 @@ void Player::UpdateNewInstanceIdTimers(TimePoint const& now)
     }
 }
 
-<<<<<<< HEAD
 void Player::UpdateClientAuras()
 {
     for (const auto& iter : m_spellAuraHolders)
@@ -21416,136 +21373,3 @@ void Player::StopCinematic()
     m_cinematicMgr->EndCinematic();
     m_cinematicMgr.reset(nullptr);
 }
-=======
-void Player::CFJoinBattleGround()
-{
-	if (!sWorld.getConfig(CONFIG_BOOL_CFBG_ENABLED))
-		return;
-	
-		FixLanguageSkills();
-	
-		if (!NativeTeam())
-		{
-		SetByteValue(UNIT_FIELD_BYTES_0, 0, getFRace());
-		setFaction(getFFaction());
-		}
-	
-		FakeDisplayID();
-	
-		sWorld.InvalidatePlayerDataToAllClient(this->GetObjectGuid());
-}
-
-void Player::CFLeaveBattleGround()
-{
-	if (!sWorld.getConfig(CONFIG_BOOL_CFBG_ENABLED))
-		return;
-	
-		FixLanguageSkills(true, true);
-	
-	SetByteValue(UNIT_FIELD_BYTES_0, 0, getORace());
-	setFaction(getOFaction());
-	InitDisplayIds();
-	
-		sWorld.InvalidatePlayerDataToAllClient(GetObjectGuid());
-}
-
-void Player::FakeDisplayID()
-{
-	if (!sWorld.getConfig(CONFIG_BOOL_CFBG_ENABLED))
-		return;
-	
-		if (!NativeTeam())
-		{
-		PlayerInfo const* info = sObjectMgr.GetPlayerInfo(getRace(), getClass());
-		if (!info)
-			{
-			for (int i = 1; i <= CLASS_DRUID; i++)
-				{
-				info = sObjectMgr.GetPlayerInfo(getRace(), i);
-				if (info)
-					break;
-				}
-			}
-		
-			if (!info)
-			{
-			sLog.outError("Player %u has incorrect race/class pair. Can't init display ids.", GetGUIDLow());
-			return;
-			}
-		
-			SetObjectScale(DEFAULT_OBJECT_SCALE);
-		
-		uint8 gender = getGender();
-		switch (gender)
-		{
-		case GENDER_FEMALE:
-			SetDisplayId(info->displayId_f);
-			SetNativeDisplayId(info->displayId_f);
-			break;
-		case GENDER_MALE:
-			SetDisplayId(info->displayId_m);
-			SetNativeDisplayId(info->displayId_m);
-			break;
-		default:
-			sLog.outError("Invalid gender %u for player", gender);
-			return;
-			}
-		}
-}
-
-void Player::FixLanguageSkills(bool force, bool native)
-{
-	if (!sWorld.getConfig(CONFIG_BOOL_CFBG_ENABLED))
-		return;
-	
-		if (!force)
-		native = NativeTeam();
-	
-		    // SpellId, OriginalSpell
-		auto spells = std::unordered_map<uint32, bool>();
-	
-		for (auto& i : sObjectMgr.GetPlayerInfo(getORace(), getClass())->spell)
-		if (auto spell = sSpellTemplate.LookupEntry<SpellEntry>(i))
-		if (spell->Effect[0] == SPELL_EFFECT_LANGUAGE)
-		spells[spell->Id] = true;
-	
-		for (auto& i : sObjectMgr.GetPlayerInfo(getFRace(), getClass())->spell)
-		if (auto spell = sSpellTemplate.LookupEntry<SpellEntry>(i))
-		if (spell->Effect[0] == SPELL_EFFECT_LANGUAGE)
-		spells[spell->Id] = false;
-	
-		for (auto& i : spells)
-		{
-		if (i.second == native)
-			learnSpell(i.first, true);
-		else
-			this->removeSpell(i.first);
-		}
-}
-
-void Player::SetFakeValues()
-{
-	m_oRace = GetByteValue(UNIT_FIELD_BYTES_0, 0);
-	m_oFaction = GetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE);
-	
-		m_fRace = 0;
-	
-		while (m_fRace == 0)
-		{
-		for (uint8 i = RACE_HUMAN; i <= RACE_DRAENEI; ++i)
-			{
-			if (i == RACE_GOBLIN)
-				continue;
-			
-				PlayerInfo const* info = sObjectMgr.GetPlayerInfo(i, getClass());
-			if (!info || Player::TeamForRace(i) == GetOTeam())
-				continue;
-			
-				if (urand(0, 5) == 0)
-				m_fRace = i;
-			}
-		}
-
-		m_fFaction = Player::getFactionForRace(m_fRace);
-}
->>>>>>> master

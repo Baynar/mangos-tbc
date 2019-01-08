@@ -41,13 +41,7 @@
 #include "Loot/LootMgr.h"
 #include "Spells/SpellMgr.h"
 
-<<<<<<< HEAD
 Object::Object(): m_updateFlag(0), m_itsNewObject(false)
-=======
-#include "Entities/CPlayer.h"
-
-Object::Object(): m_updateFlag(0)
->>>>>>> master
 {
     m_objectTypeId      = TYPEID_OBJECT;
     m_objectType        = TYPEMASK_OBJECT;
@@ -258,15 +252,15 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
         {
             Player* player = ((Player*)unit);
             if (player->GetTransport())
-				player->m_movementInfo->AddMovementFlag(MOVEFLAG_ONTRANSPORT);
+                player->m_movementInfo.AddMovementFlag(MOVEFLAG_ONTRANSPORT);
             else
-				player->m_movementInfo->RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
+                player->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ONTRANSPORT);
         }
 
         // Update movement info time
-		unit->m_movementInfo->UpdateTime(WorldTimer::getMSTime());
+        unit->m_movementInfo.UpdateTime(WorldTimer::getMSTime());
         // Write movement info
-		unit->m_movementInfo->Write(*data);
+        unit->m_movementInfo.Write(*data);
 
         // Unit speeds
         *data << float(unit->GetSpeed(MOVE_WALK));
@@ -279,7 +273,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const
         *data << float(unit->GetSpeed(MOVE_TURN_RATE));
 
         // 0x08000000
-		if (unit->m_movementInfo->GetMovementFlags() & MOVEFLAG_SPLINE_ENABLED)
+        if (unit->m_movementInfo.GetMovementFlags() & MOVEFLAG_SPLINE_ENABLED)
             Movement::PacketBuilder::WriteCreate(*unit->movespline, *data);
     }
     // 0x40
@@ -502,8 +496,7 @@ void Object::BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, UpdateMask* u
                 else if ((index == UNIT_FIELD_HEALTH || index == UNIT_FIELD_MAXHEALTH) &&
                          !(static_cast<const Unit*>(this))->IsFogOfWarVisibleHealth(target))
                 {
-					*data << m_uint32Values[index];
-                    //*data << uint32(index == UNIT_FIELD_MAXHEALTH ? 100 : ceil(100.0 * m_uint32Values[UNIT_FIELD_HEALTH] / m_uint32Values[UNIT_FIELD_MAXHEALTH]));
+                    *data << uint32(index == UNIT_FIELD_MAXHEALTH ? 100 : ceil(100.0 * m_uint32Values[UNIT_FIELD_HEALTH] / m_uint32Values[UNIT_FIELD_MAXHEALTH]));
                 }
 
                 // Fog of War: hide stat values for non-allied units according to settings
@@ -846,8 +839,6 @@ void Object::ApplyModUInt32Value(uint16 index, int32 val, bool apply)
     cur += (apply ? val : -val);
     if (cur < 0)
         cur = 0;
-	//if (apply && index == CR_CRIT_MELEE || index == CR_CRIT_RANGED || index == CR_CRIT_SPELL && cur > /*the haste cap, 50 for example*/ 80)
-		//cur = 80;
     SetUInt32Value(index, cur);
 }
 
@@ -855,17 +846,13 @@ void Object::ApplyModInt32Value(uint16 index, int32 val, bool apply)
 {
     int32 cur = GetInt32Value(index);
     cur += (apply ? val : -val);
-	//if (apply && index == CR_CRIT_MELEE || index == CR_CRIT_RANGED || index == CR_CRIT_SPELL && cur > /*the haste cap, 50 for example*/ 80)
-		//cur = 80;
     SetInt32Value(index, cur);
 }
 
 void Object::ApplyModSignedFloatValue(uint16 index, float  val, bool apply)
 {
-	float cur = GetFloatValue(index);
-	cur += (apply ? val : -val);
-	//if (apply && index == CR_CRIT_MELEE || index == CR_CRIT_RANGED || index == CR_CRIT_SPELL && cur > /*the haste cap, 50 for example*/ 80)
-		//cur = 80;
+    float cur = GetFloatValue(index);
+    cur += (apply ? val : -val);
     SetFloatValue(index, cur);
 }
 
@@ -875,8 +862,6 @@ void Object::ApplyModPositiveFloatValue(uint16 index, float  val, bool apply)
     cur += (apply ? val : -val);
     if (cur < 0)
         cur = 0;
-	//if (apply && index == CR_CRIT_MELEE || index == CR_CRIT_RANGED || index == CR_CRIT_SPELL && cur > /*the haste cap, 50 for example*/ 80)
-		//cur = 80;
     SetFloatValue(index, cur);
 }
 
@@ -1064,10 +1049,7 @@ void WorldObject::Relocate(float x, float y, float z, float orientation)
     m_position.o = orientation;
 
     if (isType(TYPEMASK_UNIT))
-		((Unit*)this)->m_movementInfo->ChangePosition(x, y, z, orientation);
-	
-		if (isType(TYPEMASK_PLAYER))
-		this->ToCPlayer()->HandleRelocate(x, y, z, orientation);
+        ((Unit*)this)->m_movementInfo.ChangePosition(x, y, z, orientation);
 }
 
 void WorldObject::Relocate(float x, float y, float z)
@@ -1077,10 +1059,7 @@ void WorldObject::Relocate(float x, float y, float z)
     m_position.z = z;
 
     if (isType(TYPEMASK_UNIT))
-		((Unit*)this)->m_movementInfo->ChangePosition(x, y, z, GetOrientation());
-
-	if (isType(TYPEMASK_PLAYER))
-		this->ToCPlayer()->HandleRelocate(x, y, z, GetOrientation());
+        ((Unit*)this)->m_movementInfo.ChangePosition(x, y, z, GetOrientation());
 }
 
 void WorldObject::SetOrientation(float orientation)
@@ -1088,7 +1067,7 @@ void WorldObject::SetOrientation(float orientation)
     m_position.o = orientation;
 
     if (isType(TYPEMASK_UNIT))
-		((Unit*)this)->m_movementInfo->ChangeOrientation(orientation);
+        ((Unit*)this)->m_movementInfo.ChangeOrientation(orientation);
 }
 
 uint32 WorldObject::GetZoneId() const

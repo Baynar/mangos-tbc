@@ -41,8 +41,6 @@
 #include "Entities/Pet.h"
 #include "Social/SocialMgr.h"
 
-#include "Entities/CPlayer.h"
-
 void WorldSession::HandleRepopRequestOpcode(WorldPacket& recv_data)
 {
     DEBUG_LOG("WORLD: Received opcode CMSG_REPOP_REQUEST");
@@ -126,8 +124,7 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recv_data)
         return;
     wstrToLower(wplayer_name);
     wstrToLower(wguild_name);
-	level_min = 0;
-	level_max = 255;
+
     // client send in case not set max level value 100 but mangos support 255 max level,
     // update it to show GMs with characters after 100 level
     if (level_max >= MAX_LEVEL)
@@ -274,7 +271,7 @@ void WorldSession::HandleLogoutRequestOpcode(WorldPacket& /*recv_data*/)
     // Can not logout if...
     if (GetPlayer()->isInCombat() ||                        //...is in combat
             //...is jumping ...is falling
-			GetPlayer()->m_movementInfo->HasMovementFlag(MovementFlags(MOVEFLAG_FALLING | MOVEFLAG_FALLINGFAR)))
+            GetPlayer()->m_movementInfo.HasMovementFlag(MovementFlags(MOVEFLAG_FALLING | MOVEFLAG_FALLINGFAR)))
     {
         WorldPacket data(SMSG_LOGOUT_RESPONSE, (2 + 4)) ;
         data << (uint8)0xC;
@@ -1432,16 +1429,14 @@ void WorldSession::HandleMoveSetCanFlyAckOpcode(WorldPacket& recv_data)
     DEBUG_LOG("WORLD: Received opcode CMSG_MOVE_SET_CAN_FLY_ACK");
     // recv_data.hexlike();
 
-	MovementInfoPtr movementInfo = std::make_shared<MovementInfo>(MovementInfo());
+    MovementInfo movementInfo;
 
     recv_data >> Unused<uint64>();                          // guid
     recv_data >> Unused<uint32>();                          // unk
     recv_data >> movementInfo;
     recv_data >> Unused<uint32>();                          // unk2
 
-	_player->m_movementInfo->SetMovementFlags(movementInfo->GetMovementFlags());
-	
-	_player->ToCPlayer()->HandleAntiCheat(movementInfo, CMSG_MOVE_SET_CAN_FLY_ACK);
+    _player->m_movementInfo.SetMovementFlags(movementInfo.GetMovementFlags());
 }
 
 void WorldSession::HandleRequestPetInfoOpcode(WorldPacket& /*recv_data */)

@@ -618,7 +618,6 @@ class Creature : public Unit
         bool IsNoAggroOnSight() const { return (GetCreatureInfo()->ExtraFlags & CREATURE_EXTRA_FLAG_NO_AGGRO_ON_SIGHT) != 0; }
         bool IsGuard() const { return (GetCreatureInfo()->ExtraFlags & CREATURE_EXTRA_FLAG_GUARD) != 0; }
 
-<<<<<<< HEAD
         bool CanWalk() const { return (GetCreatureInfo()->InhabitType & INHABIT_GROUND) != 0; }
         bool CanSwim() const { return (GetCreatureInfo()->InhabitType & INHABIT_WATER) != 0; }
         bool IsSwimming() const { return m_movementInfo.HasMovementFlag(MOVEFLAG_SWIMMING); }
@@ -626,15 +625,6 @@ class Creature : public Unit
         bool IsFlying() const { return m_movementInfo.HasMovementFlag((MovementFlags)(MOVEFLAG_FLYING | MOVEFLAG_HOVER | MOVEFLAG_LEVITATING)); }
         bool IsTrainerOf(Player* pPlayer, bool msg) const;
         bool CanInteractWithBattleMaster(Player* pPlayer, bool msg) const;
-=======
-        bool CanWalk() const { return !!(GetCreatureInfo()->InhabitType & INHABIT_GROUND); }
-        bool CanSwim() const { return !!(GetCreatureInfo()->InhabitType & INHABIT_WATER); }
-        bool IsSwimming() const { return m_movementInfo->HasMovementFlag(MOVEFLAG_SWIMMING); }
-        bool CanFly() const override { return (GetCreatureInfo()->InhabitType & INHABIT_AIR) || m_movementInfo->HasMovementFlag((MovementFlags)(MOVEFLAG_LEVITATING | MOVEFLAG_HOVER | MOVEFLAG_CAN_FLY)); }
-        bool IsFlying() const { return m_movementInfo->HasMovementFlag((MovementFlags)(MOVEFLAG_FLYING | MOVEFLAG_HOVER | MOVEFLAG_LEVITATING)); }
-        bool IsTrainerOf(Player* player, bool msg) const;
-        bool CanInteractWithBattleMaster(Player* player, bool msg) const;
->>>>>>> master
         bool CanTrainAndResetTalentsOf(Player* pPlayer) const;
 
         void FillGuidsListFromThreatList(GuidVector& guids, uint32 maxamount = 0);
