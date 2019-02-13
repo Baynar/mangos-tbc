@@ -347,7 +347,7 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
     else
     {
         UpdateDamagePhysical(BASE_ATTACK);
-        if (CanDualWield() && haveOffhandWeapon())          // allow update offhand damage only if player knows DualWield Spec and has equipped offhand weapon
+        if (CanDualWield() && hasOffhandWeaponForAttack())          // allow update offhand damage only if player knows DualWield Spec and has equipped offhand weapon
             UpdateDamagePhysical(OFF_ATTACK);
     }
 }
@@ -815,8 +815,35 @@ void Creature::UpdateDamagePhysical(WeaponAttackType attType)
     float mindamage = ((base_value + weapon_mindamage) * base_pct + total_value) * total_pct;
     float maxdamage = ((base_value + weapon_maxdamage) * base_pct + total_value) * total_pct;
 
-    SetStatFloatValue(attType == BASE_ATTACK ? UNIT_FIELD_MINDAMAGE : UNIT_FIELD_MINOFFHANDDAMAGE, mindamage);
-    SetStatFloatValue(attType == BASE_ATTACK ? UNIT_FIELD_MAXDAMAGE : UNIT_FIELD_MAXOFFHANDDAMAGE, maxdamage);
+    // Disarm for creatures
+    if (hasWeapon(attType) && !hasWeaponForAttack(attType))
+    {
+        mindamage *= 0.5f;
+        maxdamage *= 0.5f;
+    }
+
+    uint16 fieldmin, fieldmax;
+
+    switch (attType)
+    {
+        case RANGED_ATTACK:
+            fieldmin = UNIT_FIELD_MINRANGEDDAMAGE;
+            fieldmax = UNIT_FIELD_MAXRANGEDDAMAGE;
+            break;
+        case BASE_ATTACK:
+            fieldmin = UNIT_FIELD_MINDAMAGE;
+            fieldmax = UNIT_FIELD_MAXDAMAGE;
+            break;
+        case OFF_ATTACK:
+            fieldmin = UNIT_FIELD_MINOFFHANDDAMAGE;
+            fieldmax = UNIT_FIELD_MAXOFFHANDDAMAGE;
+            break;
+        default:
+            return;
+    }
+
+    SetStatFloatValue(fieldmin, mindamage);
+    SetStatFloatValue(fieldmax, maxdamage);
 }
 
 /*#######################################
